@@ -3,9 +3,9 @@ gandalf
 
 Gandalf - Generic ANd DistAnce-invariant Laser Features
 
-The Gandalf detector is an open source C++ ROS package for object detection based on gneric-distance invariant range scan features. 
+The Gandalf detector is an open source C++ ROS package for object detection based on generic-distance invariant range scan features. 
 
-The detector can be trained for detection and distinction of different objects. For our application we trained it for the detection and destinction of the three object classes 1) person without walking aid, 2) person in a wheelchair, and 3) person with a walker. The trained model for detection and distinction of this objects is provided with this detector. 
+The detector can be trained for detection and distinction of different objects. For our application we trained it for the detection and destinction of the three object classes 1) person without walking aid, 2) person in a wheelchair, and 3) person with a walker. The trained model for detection and distinction of these objects is provided with this detector. 
 
 When using this software for your own research, please acknowledge the effort that went into its construction by citing the corresponding paper:
 
