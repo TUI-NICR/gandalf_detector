@@ -140,12 +140,12 @@ add_dependencies(gandalf_detector_node
 	opencv_ml, opencv_core
 	)
 	
-add_dependencies(gandalf_mo_detector_node 
-	gandalf_detector_generate_messages_cpp,
-	${catkin_EXPORTED_TARGETS},
-	# , gandalf_detector
-	opencv_ml, opencv_core
-	)
+#add_dependencies(gandalf_mo_detector_node 
+#	gandalf_detector_generate_messages_cpp,
+#	${catkin_EXPORTED_TARGETS},
+#	# , gandalf_detector
+#	opencv_ml, opencv_core
+#	)
 	
 ## Specify libraries to link a library or executable target against
 target_link_libraries(gandalf_detector_node
@@ -155,12 +155,12 @@ target_link_libraries(gandalf_detector_node
   gandalf_detector
 )
 
-target_link_libraries(gandalf_mo_detector_node
-  ${catkin_LIBRARIES}
-  opencv_ml
-  opencv_core
-  gandalf_detector
-)
+#target_link_libraries(gandalf_mo_detector_node
+#  ${catkin_LIBRARIES}
+#  opencv_ml
+#  opencv_core
+#  gandalf_detector
+#)
 
 #############
 ## Install ##
