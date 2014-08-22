@@ -129,7 +129,7 @@ add_library(gandalf_detector
 
 ## Declare a cpp executable
 add_executable(gandalf_detector_node src/gandalf_detector_node.cpp)
-add_executable(gandalf_mo_detector_node src/gandalf_mo_detector_node.cpp)
+#add_executable(gandalf_mo_detector_node src/gandalf_mo_detector_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
