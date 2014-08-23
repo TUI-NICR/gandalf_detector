@@ -7,7 +7,7 @@ The Gandalf detector is an open source C++ ROS package for object detection base
 
 The detector can be trained for detection and distinction of different objects. For our application we trained it for the detection and destinction of the three object classes 1) person without walking aid, 2) person in a wheelchair, and 3) person with a walker. The trained model for detection and distinction of these objects is provided with this detector. 
 
-The detector is not fully ported to ROS until yet. Especially the training of a detector on your own data is not supported until yet. However, we plan to provide the necessary sources soon. 
+The detector was originally developed in "MIRA - Middleware for Robotic Applications" (www.mira-project.org) and is not fully ported to ROS until yet. Especially the training of a detector on your own data is not supported until yet. However, we plan to provide the necessary sources soon. 
 
 To try out the detector run:
 roslaunch gandalf_detector gandalf_detector.launch
