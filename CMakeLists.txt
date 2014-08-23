@@ -121,7 +121,6 @@ add_library(gandalf_detector
   components/AdaBoostTreeClassifier/src/AdaboostClassifier.C
   components/AdaBoostTreeClassifier/src/AdaboostClassifierNode.C
   components/GDIFDetector/src/GDIFeatures.C
-  components/GDIFDetector/src/GDIFDetector.C
   components/GDIFDetector/src/GDIFDetectorTree.C
 )
 
