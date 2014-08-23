@@ -7,8 +7,11 @@ The Gandalf detector is an open source C++ ROS package for object detection base
 
 The detector can be trained for detection and distinction of different objects. For our application we trained it for the detection and destinction of the three object classes 1) person without walking aid, 2) person in a wheelchair, and 3) person with a walker. The trained model for detection and distinction of these objects is provided with this detector. 
 
-The detector is not fully ported to ROS until yet. Especially the multi object detection is not commited yet. 
-To test the detector (without object classification) run: roslaunch gandalf_detector gandalf_detector.launch
+The detector is not fully ported to ROS until yet. Especially the training of a detector on your own data is not supported until yet. However, we plan to provide the necessary sources soon. 
+
+To try out the detector run:
+roslaunch gandalf_detector gandalf_detector.launch
+Then you can visualize the laser range data and the markers (which show the detections) using rviz
 
 When using this software for your own research, please acknowledge the effort that went into its construction by citing the corresponding paper:
 
@@ -33,7 +36,7 @@ Limitations
 
 - False detections: Our tracker [Volkhardt-SMC-2013] fuses the laser-based detections with futher detections (such as visual detections). Thereby laser-based detections, which do not move and are not confirmed by other detectors, do not result in confident tracker hypotheses. 
 
-[Volkhardt-SMC-2013]: 
+[Volkhardt-SMC-2013]
   Volkhardt, M., Weinrich, Ch., Gross, H.-M.
   People Tracking on a Mobile Companion Robot.
   In: Proc. IEEE Int. Conf. on Systems, Man, and Cybernetics (SMC), pp. 4354-4359, 2013 
