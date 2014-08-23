@@ -1,0 +1,7 @@
+Thresholds: [-1.6, 0, -1.8]
+ClassifierFiles: [$(find gandalf_detector)/components/GDIF_LBA/etc/TreeSmallBox/WHEELCHAIRvsBACKGROUND.xml, $(find gandalf_detector)/components/GDIF_LBA/etc/TreeSmallBox/PERSONvsWALKER.xml, $(find gandalf_detector)/components/GDIF_LBA/etc/TreeSmallBox/PERSONnWALKERvsWHEELCHAIRnBACKGROUND.xml]
+Descriptions: [WHEELCHAIRvsBACKGROUND, PERSONvsWALKER, PERSONnWALKERvsWHEELCHAIRnBACKGROUND]
+PosChilds: [-1, -1, 1]
+NegChilds: [-1, -1, 0]
+PosLabels: [2, 0, 7]
+NegLabels: [-1, 1, 7]

@@ -1,0 +1,8 @@
+Thresholds: [0.0]
+ClassifierFiles: [$(find gandalf_detector)/components/GDIF_LBA/etc/GDIFClassifier/PERSONvsBACKGROUND.xml]
+Descriptions: [PEOPLEvsBGR]
+PosLabels: [0]
+NegLabels: [-1]
+
+PosChilds: [-1]
+NegChilds: [-1]

@@ -47,40 +47,157 @@
 #include <robot/RangeScan.h>
 #include <geometry/Point.h>
 
-#include <GDIFDetector.h>
+#include <GDIFDetectorTree.h>
+
+#include <AdaboostClassifierNodeParams.h>
 #include <boost/filesystem.hpp>
+
+#include <ros/package.h>
 
 using namespace mira::laserbasedobjectdetection;
 
-class GDIFDetectorNode{
+class GDIFMultiObjectDetectorNode{
 public:
 
-	GDIFDetectorNode() : mNodeHandle("~"){
-		mAdaBoostParams = boost::shared_ptr<AdaboostClassifierParams>(new AdaboostClassifierParams());
+	GDIFMultiObjectDetectorNode() : mNodeHandle("~"){
+		std_msgs::ColorRGBA color;
+		color.r = 0.5; color.g =  0.0; color.b = 0.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.5; color.g =  0.5; color.b = 0.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.0; color.g =  0.5; color.b = 0.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.0; color.g =  0.5; color.b = 0.5; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.0; color.g =  0.0; color.b = 0.5; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.5; color.g =  0.0; color.b = 0.5; color.a =  1.0;
+		mColorPalette.push_back(color);
+
+		color.r = 1.0; color.g =  0.0; color.b = 0.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 1.0; color.g =  1.0; color.b = 0.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.0; color.g =  1.0; color.b = 0.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.0; color.g =  1.0; color.b = 1.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 0.0; color.g =  0.0; color.b = 1.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+		color.r = 1.0; color.g =  0.0; color.b = 1.0; color.a =  1.0;
+		mColorPalette.push_back(color);
+
+		mMarker.ns = std::string("people_detections");
+		mMarker.id = 0;
+		mMarker.type = visualization_msgs::Marker::SPHERE_LIST;
+		//mMarker.action = visualization_msgs::Marker::ADD;
+		mMarker.action = visualization_msgs::Marker::MODIFY;
+		mMarker.pose.orientation.w = 1.0;
+		mMarker.scale.x = 0.3;
+		mMarker.scale.y = 0.3;
+		mMarker.scale.z = 0.1;
+		mMarker.color.a = 1.0;
+		mMarker.color.r = 0.0;
+		mMarker.color.g = 1.0;
+		mMarker.color.b = 0.0;
+		//mMarker.lifetime = 10;
+		//mMarker.frame_locked = true;
+
+	}
+
+	std::string resolvePath(const std::string& iPath){
+		std::size_t startPos = iPath.find("$(find ");
+
+		if(startPos == std::string::npos){
+			return iPath;
+		}
+		std::size_t endPos = iPath.find(")",startPos);
+
+		if(endPos == std::string::npos){
+			return iPath;
+		}
+		//ROS_ERROR("package name: [%s]", iPath.substr(startPos + 7, endPos - startPos - 7).c_str());
+		//ROS_ERROR("new path: [%s]", (iPath.substr(0,startPos) + ros::package::getPath(iPath.substr(startPos + 7, endPos - startPos - 7)) + iPath.substr(endPos+1)).c_str());
+		return iPath.substr(0,startPos) + ros::package::getPath(iPath.substr(startPos + 7, endPos - startPos - 7)) + iPath.substr(endPos+1);
 	}
 
     void init(){
-		mHypothesesPoseArrayTopic = mNodeHandle.advertise<geometry_msgs::PoseArray>("hypotheses", 1000);
-		mHypothesesMarkerTopic = mNodeHandle.advertise<visualization_msgs::Marker>("hypotheses2", 1000);
-		mLaserSub = mNodeHandle.subscribe<sensor_msgs::LaserScan>("laser", 1000, &GDIFDetectorNode::laserCallback, this);
+		mHypothesesPoseArrayTopic = mNodeHandle.advertise<geometry_msgs::PoseArray>("HypothesesPoses", 1000);
+		mHypothesesMarkerTopic = mNodeHandle.advertise<visualization_msgs::Marker>("HypothesesMarkers", 1000);
+		mLaserSub = mNodeHandle.subscribe<sensor_msgs::LaserScan>("laser", 1000, &GDIFMultiObjectDetectorNode::laserCallback, this);
 
 		int tInt;
 		double tDouble;
-		mNodeHandle.param("FeatureVectorSize", tInt, 45);
-		mAdaBoostParams->mFeatureVectorSize = tInt;
-		mNodeHandle.param("Threshold", tDouble, 0.0);
-		mAdaBoostParams->mThreshold = tDouble;
-		mNodeHandle.param("ClassifierFile", mAdaBoostParams->mOpenCvPath, std::string("./classifier.xml"));
+
+		int tFeatureVectorSize;
+		mNodeHandle.param("FeatureVectorSize", tFeatureVectorSize, 45);
+
+		std::vector<boost::shared_ptr<AdaboostClassifierNodeParams>> tAdaboostClassifierNodeParams;
+
+		std::vector<double> tThresholds;
+		std::vector<string> tClassifierFiles;
+		std::vector<string> tDescriptions;
+		std::vector<int> tPosLabels;
+		std::vector<int> tNegLabels;
+		std::vector<int> tPosChilds;
+		std::vector<int> tNegChilds;
+
+		if(!mNodeHandle.hasParam("Thresholds")){
+			ROS_ERROR("no param thresholds");
+		}
+
+		if(!mNodeHandle.getParam("Thresholds", tThresholds)){
+			ROS_ERROR("could not get param thresholds");
+		}
+
+		mNodeHandle.getParam("ClassifierFiles", tClassifierFiles);
+		mNodeHandle.getParam("Descriptions", tDescriptions);
+		mNodeHandle.getParam("PosLabels", tPosLabels);
+		mNodeHandle.getParam("NegLabels", tNegLabels);
+		mNodeHandle.getParam("PosChilds", tPosChilds);
+		mNodeHandle.getParam("NegChilds", tNegChilds);
+
+		if(tThresholds.size() != tClassifierFiles.size()){
+			ROS_ERROR("tThresholds.size() [%d] != tClassifierFiles.size() [%d]", (int)tThresholds.size(), (int)tClassifierFiles.size());
+		}
+		if(tPosLabels.size() != tNegLabels.size()){
+			ROS_ERROR("tPosLabels.size() [%d] != tNegLabels.size() [%d]", (int)tPosLabels.size(), (int)tNegLabels.size());
+		}
+		if(tPosChilds.size() != tNegChilds.size()){
+			ROS_ERROR("tPosChilds.size() [%d] != tNegChilds.size() [%d]", (int)tPosChilds.size(), (int)tNegChilds.size());
+		}
+		if(tPosChilds.size() != tPosLabels.size()){
+			ROS_ERROR("tPosChilds.size() [%d] != tPosLabels.svn size() [%d]", (int)tPosChilds.size(), (int)tPosLabels.size());
+		}
+		if(tPosChilds.size() != tThresholds.size()){
+			ROS_ERROR("tPosChilds.size() [%d] != tThresholds.size() [%d]", (int)tPosChilds.size(), (int)tThresholds.size());
+		}
+
+		for(uint32 i = 0; i < tThresholds.size(); ++i){
+			boost::filesystem::path testPath(resolvePath(tClassifierFiles[i]));
+			if(!boost::filesystem::exists(testPath)){
+				ROS_ERROR("Could not find opencv classifier file: [%s]", testPath.string().c_str());
+			}
+			tAdaboostClassifierNodeParams.push_back(boost::shared_ptr<AdaboostClassifierNodeParams>(new AdaboostClassifierNodeParams((StageLabel) tPosLabels[i], (StageLabel) tNegLabels[i], tDescriptions[i], resolvePath(tClassifierFiles[i]), tThresholds[i], tFeatureVectorSize)));
+		}
+		for(uint32 i = 0; i < tThresholds.size(); ++i){
+			if(tPosChilds[i] >= (int)tThresholds.size())
+				ROS_ERROR("tPosChilds[i] [%d] >=  tThresholds.size() [%d]", tPosChilds[i], (int)tThresholds.size());
+			if(tNegChilds[i] >= (int)tThresholds.size())
+				ROS_ERROR("tNegChilds[i] [%d] >=  tThresholds.size() [%d]", tNegChilds[i], (int)tThresholds.size());
+			if(tPosChilds[i] >= 0)
+				tAdaboostClassifierNodeParams[i]->mPosChild = tAdaboostClassifierNodeParams[tPosChilds[i]];
+			if(tNegChilds[i] >= 0)
+				tAdaboostClassifierNodeParams[i]->mNegChild = tAdaboostClassifierNodeParams[tNegChilds[i]];
+		}
 
 		mNodeHandle.param("JumpDistance", tDouble, 0.1);
 		mSegmentationParams.mJumpDistance = tDouble;
+		//ROS_INFO("jump distance [%f] ", mParams.mJumpDistance);
 		mNodeHandle.param("MaxRange", tDouble, 10.0);
 		mSegmentationParams.mMaxRange = tDouble;
 		mNodeHandle.param("MinSegmentSize", tInt, 3);
 		mSegmentationParams.mMinSegmentSize = tInt;
-		mNodeHandle.param("BackgroundJumpDistance", tDouble, 0.2);
-		mSegmentationParams.mBackgroundJumpDistance = tDouble;
-
 		mNodeHandle.param("BinQuantity", tInt, 15);
 		mBoundingBoxParams.mBinQuantity = tInt;
 		mNodeHandle.param("BoxWidth", tDouble, 0.8);
@@ -94,11 +211,7 @@ public:
 		mBoundingBoxParams.mBoxFromLeftOffset = tDouble;
 		mNodeHandle.param("UseHighFreqFeats", mBoundingBoxParams.mUseHighFreqFeats, true);
 
-		boost::filesystem::path testPath(mAdaBoostParams->mOpenCvPath);
-		if(!boost::filesystem::exists(testPath)){
-			ROS_ERROR("Could not find opencv path: [%s]",mAdaBoostParams->mOpenCvPath.c_str());
-		}
-		mGDIFDetector.inititalize(mAdaBoostParams, mSegmentationParams, mBoundingBoxParams);
+		mGDIFDetector.inititalize(tAdaboostClassifierNodeParams.back(), mSegmentationParams, mBoundingBoxParams);
 	};
 
 	/**
@@ -140,37 +253,20 @@ public:
 		//}
 		rangeScan.reflectance = laserScan->intensities;
 
-		// the actual classification of the scan
-		std::cout<<"before mGDIFDetector.classifyScan"<<std::endl;
-		std::vector<Point2f> detections = mGDIFDetector.classifyScan(rangeScan);
-		std::cout<<"after mGDIFDetector.classifyScan"<<std::endl;
+		//
+		std::vector<Point2f> detections;
+		std::vector<StageLabel> labels;
+		labels = mGDIFDetector.classifyScan(rangeScan, detections);
 
-		visualization_msgs::Marker marker;
-		marker.header.seq = laserScan->header.seq;
-		marker.header.stamp = laserScan->header.stamp;
-		marker.header.frame_id = laserScan->header.frame_id;
+		// just to debug
+		//ROS_ERROR("detections.size() = %d, labels.size() = %d !", int(detections.size()), int(labels.size()));
 
-		marker.ns = std::string("people_detections");
-		marker.id = 0;
-		marker.type = visualization_msgs::Marker::SPHERE_LIST;
-		//marker.action = visualization_msgs::Marker::ADD;
-		marker.action = visualization_msgs::Marker::MODIFY;
-		marker.pose.position.x = 0;
-		marker.pose.position.y = 0;
-		marker.pose.position.z = 0;
-		marker.pose.orientation.x = 0.0;
-		marker.pose.orientation.y = 0.0;
-		marker.pose.orientation.z = 0.0;
-		marker.pose.orientation.w = 1.0;
-		marker.scale.x = 0.3;
-		marker.scale.y = 0.3;
-		marker.scale.z = 0.1;
-		marker.color.a = 1.0;
-		marker.color.r = 0.0;
-		marker.color.g = 1.0;
-		marker.color.b = 0.0;
-		//marker.lifetime = 10;
-		//marker.frame_locked = true;
+		mMarker.header.seq = laserScan->header.seq;
+		mMarker.header.stamp = laserScan->header.stamp;
+		mMarker.header.frame_id = laserScan->header.frame_id;
+
+		mMarker.points.clear();
+		mMarker.colors.clear();
 
 		geometry_msgs::PoseArray poseArray;
 		poseArray.header.seq = laserScan->header.seq;
@@ -178,15 +274,9 @@ public:
 		poseArray.header.frame_id = laserScan->header.frame_id;
 
 		geometry_msgs::Pose pose;
-		pose = marker.pose;
+		pose = mMarker.pose;
 		geometry_msgs::Point point;
 		point.z = 0.0;
-
-		std_msgs::ColorRGBA color;
-		color.a = 1.0;
-		color.r = 0.0;
-		color.g = 1.0;
-		color.b = 0.0;
 
 		for(uint i=0;i<detections.size();i++){
 			pose.position.x = detections[i].x();
@@ -196,11 +286,11 @@ public:
 			point.x = detections[i].x();
 			point.y = detections[i].y();
 
-			marker.points.push_back(point);
-			marker.colors.push_back(color);
+			mMarker.points.push_back(point);
+			mMarker.colors.push_back(mColorPalette[labels[i] % mColorPalette.size()]);
 		}
 		mHypothesesPoseArrayTopic.publish(poseArray);
-		mHypothesesMarkerTopic.publish(marker);
+		mHypothesesMarkerTopic.publish(mMarker);
 	}
 
 private:
@@ -209,19 +299,24 @@ private:
 	ros::Publisher mHypothesesMarkerTopic;
 	ros::Subscriber mLaserSub;
 
-	GDIFDetector mGDIFDetector;
-	boost::shared_ptr<AdaboostClassifierParams> mAdaBoostParams;
+	GDIFDetectorTree mGDIFDetector;
+
 	SegmentationParams mSegmentationParams;
 	BoundingBoxParams mBoundingBoxParams;
+
+	// are there color palettes in ros?
+	std::vector<std_msgs::ColorRGBA> mColorPalette;
+
+	visualization_msgs::Marker mMarker;
 };
 
 
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "GDIFdetector");
-	GDIFDetectorNode tGDIFDetectorNode;
-	tGDIFDetectorNode.init();
+	ros::init(argc, argv, "GDIFMultiObjectDetector");
+	GDIFMultiObjectDetectorNode tGDIFMultiObjectDetectorNode;
+	tGDIFMultiObjectDetectorNode.init();
 	ros::spin();
 
 	return 0;

@@ -4,10 +4,9 @@ project(gandalf_detector)
 ADD_DEFINITIONS(-std=c++0x)
 
 ## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   sensor_msgs
   std_msgs
 )
@@ -106,47 +105,37 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
-  ${Eigen_INCLUDE_DIRS}
   include
   external/include
   components/GDIFDetector/include
   components/AdaBoostTreeClassifier/include
   components/LaserBasedObjectDetection/include
+  ${catkin_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(gandalf_detector
-#   src/${PROJECT_NAME}/gandalf_detector.cpp
-# )
 add_library(gandalf_detector
   components/LaserBasedObjectDetection/src/LaserRangeSegment.C
   components/LaserBasedObjectDetection/src/Segmentation.C
   components/AdaBoostTreeClassifier/src/AdaboostClassifier.C
+  components/AdaBoostTreeClassifier/src/AdaboostClassifierNode.C
   components/GDIFDetector/src/GDIFeatures.C
   components/GDIFDetector/src/GDIFDetector.C
+  components/GDIFDetector/src/GDIFDetectorTree.C
 )
 
 ## Declare a cpp executable
 add_executable(gandalf_detector_node src/gandalf_detector_node.cpp)
-#add_executable(gandalf_mo_detector_node src/gandalf_mo_detector_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(gandalf_detector_node 
 	gandalf_detector_generate_messages_cpp,
 	${catkin_EXPORTED_TARGETS},
-	# , gandalf_detector
 	opencv_ml, opencv_core
-	)
-	
-#add_dependencies(gandalf_mo_detector_node 
-#	gandalf_detector_generate_messages_cpp,
-#	${catkin_EXPORTED_TARGETS},
-#	# , gandalf_detector
-#	opencv_ml, opencv_core
-#	)
-	
+)
+		
 ## Specify libraries to link a library or executable target against
 target_link_libraries(gandalf_detector_node
   ${catkin_LIBRARIES}
@@ -154,13 +143,6 @@ target_link_libraries(gandalf_detector_node
   opencv_core
   gandalf_detector
 )
-
-#target_link_libraries(gandalf_mo_detector_node
-#  ${catkin_LIBRARIES}
-#  opencv_ml
-#  opencv_core
-#  gandalf_detector
-#)
 
 #############
 ## Install ##

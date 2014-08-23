@@ -1,15 +1,23 @@
 <launch>
 
-  <!--group ns="miraadapter">
+  <!-- for some reason MIRAAdapter does not work when started by roslaunch -->
+  <!--node pkg="MIRAAdapter" name="miraadapter_for_laser" type="miraadapter" args="-p1234"/>
+  <group ns="miraadapter">
     <node pkg="MIRAAdapter" name="miraadapter1" type="miraadapter" args="-p1234"/>
   </group-->
-
+  
   <node pkg="rosbag" type="play" name="player" output="screen" args="-l --clock $(find gandalf_detector)/launch/2014-08-18_follow.bag"/>
+  
 
   <group ns="person_detector">
     <remap from="gandalf_detector_for_persons/laser" to="/laser"/>
     <node pkg="gandalf_detector" name="gandalf_detector_for_persons" type="gandalf_detector_node">
-        <param name="ClassifierFile" value="$(find gandalf_detector)/components/GDIF_LBA/etc/GDIFClassifier/opencvclassifier.xml"/>
+        <!-- for distinction of walking aids use this parameter file -->
+        <!-- <rosparam file="$(find gandalf_detector)/launch/tree_parameter.yaml" command="load"/> -->
+        <!-- for pure detection use this parameter file -->
+        <rosparam file="$(find gandalf_detector)/launch/stub_parameter.yaml" command="load"/>
+
+        <param name="JumpDistance" value="0.1"/>        
     </node>
   </group>
 

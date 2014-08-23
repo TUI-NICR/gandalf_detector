@@ -60,7 +60,7 @@ void AdaboostClassifier::adapt(std::vector<std::vector<float> > const& tPosSampl
     cout << "start training classifier with " << mPosSamples[0].size() << " features" << endl;
     cout << "###########################" << endl;
     cout << "POS " << tPosSamples.size() << " NEG " << tNegSamples.size() << endl;
-    mParams->mFeatureVectorSize=mPosSamples[0].size();
+    //mParams->mFeatureVectorSize=mPosSamples[0].size();
 
     // convert feature vector to cv::Mat
     cv::Mat features = cv::Mat(tPosSamples.size()+tNegSamples.size(), tPosSamples[0].size(), CV_32F);
@@ -85,7 +85,7 @@ void AdaboostClassifier::adapt(std::vector<std::vector<float> > const& tPosSampl
     boostparm.cv_folds = cvFolds;
 
     this->train(features, CV_ROW_SAMPLE, classLabelResponses, cv::Mat(), cv::Mat(), cv::Mat(), cv::Mat(),boostparm);
-    this->mParams->mThreshold=0;
+    //this->mParams->mThreshold=0;
     cout << "training done" << endl;
 }
 

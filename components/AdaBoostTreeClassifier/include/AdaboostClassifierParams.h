@@ -54,6 +54,17 @@
 using namespace std;
 
 struct AdaboostClassifierParams{
+	AdaboostClassifierParams(){}
+	AdaboostClassifierParams(
+	                        	string openCvPath,
+	                        	float threshold,
+	                        	uint featureVectorSize
+	                         	){
+		mFeatureVectorSize = featureVectorSize;
+     	mThreshold = threshold;
+     	mOpenCvPath = openCvPath;
+	}
+
     template<typename Reflector>
     void reflect(Reflector& r) {
     	r.member("OpenCvPath", mOpenCvPath, "");

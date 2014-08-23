@@ -104,15 +104,16 @@ public :
      * @param opencvPath the path where the serialized classifier is saved
      */
     void saveOpenCv(string opencvPath){
-    	mParams->mOpenCvPath=opencvPath;
-    	this->save(mParams->mOpenCvPath.c_str());
+    	///mParams->mOpenCvPath=opencvPath;
+    	//this->save(mParams->mOpenCvPath.c_str());
+    	this->save(opencvPath.c_str());
     }
     /**
      * @brief loads the opencv adaboost classifier
      * @param opencvPath the path to the serialized opencv adaboost classifier
      */
-    void inline loadOpenCv(string opencvPath){
-    	this->load(opencvPath.c_str());
+    void inline loadOpenCv(){
+    	this->load(mParams->mOpenCvPath.c_str());
     }
 
     /**
@@ -144,8 +145,9 @@ public :
     	mParams->mThreshold=threshold;
     }
 
-    void inline setParams(boost::shared_ptr<AdaboostClassifierParams> adaboostClassifierParams){
+    virtual void inline initialize(boost::shared_ptr<AdaboostClassifierParams> adaboostClassifierParams){
     	mParams=adaboostClassifierParams;
+    	this->loadOpenCv();
     }
 
 private:
@@ -170,4 +172,4 @@ private:
 }
 }
 
-#endif // ADABOOSTCASCADE_H
+#endif
